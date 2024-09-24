@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Código Spawn (Cuevas)</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 60%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1d022c;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 6px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #838a8b;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            margin-right: 5px;
+        }
+
+        button:hover {
+            background-color: #000000;
+        }
+
+        textarea {
+            height: 150px;
+            resize: none;
+            margin-top: 10px;
+        }
+
+        .floating-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #333;
+            color: white;
+            padding: 2px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            font-size: 12px;
+            width: 100px;
+            text-align: center;
+        }
+
+        .floating-box a {
+            color: #00ccff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .floating-box a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.location.href='../Superficie/index.html'">GeneradorSuperficie</button>
+        
+    <div class="container">
+        <h1>Generador de Código Spawn (Cuevas)</h1>
+
+
+        <label for="creatureName">Nombre de (EntityTemplate Name "Esto"):</label>
+        <input type="text" id="creatureName" value="Enty">
+
+        <label for="comparisonType">Operador de comparación:</label>
+        <select id="comparisonType">
+            <option value="!=">!=</option>
+            <option value="==">==</option>
+        </select>
+
+        <label for="number">Index de Bloques (primero):</label>
+        <input type="number" id="number" value="3">
+
+        <label for="logicalOperator">Operador lógico:</label>
+        <select id="logicalOperator">
+            <option value="&&">&&</option>
+            <option value="||">||</option>
+        </select>
+
+        <label for="extraConditions">Agregar más Index (separar por comas):</label>
+        <input type="text" id="extraConditions" placeholder="Ejemplo: 1,2,3,4,5...">
+
+        <label for="prob1">Probabilidad (return 0f):</label>
+        <input type="number" step="0.1" id="prob1" value="0.0">
+
+        <label for="prob2">Probabilidad (return 0.5f):</label>
+        <input type="number" step="0.1" id="prob2" value="0.5">
+
+        <label for="int1">Spawn 1 de "spawn2":</label>
+        <input type="number" id="int1" value="1">
+
+        <label for="int2">Spawn2:</label>
+        <input type="number" id="int2" value="1">
+
+        <button onclick="generateCode()">Generar Código</button>
+        <button onclick="copyCode()">Copiar Código</button>
+
+        <textarea id="outputCode" readonly></textarea>
+    </div>
+
+    <div class="floating-box">
+        <p>Creado por: Zebastian</p>
+        <p><a href="https://www.youtube.com/@baztJsc/videos" target="_blank">Visita mi canal de YouTube</a></p>
+    </div>
+
+    <script>
+        function generateCode() {
+            const creatureName = document.getElementById('creatureName').value;
+            const comparisonType = document.getElementById('comparisonType').value;
+            const number = document.getElementById('number').value;
+            const logicalOperator = document.getElementById('logicalOperator').value;
+            const extraConditions = document.getElementById('extraConditions').value.split(',').map(n => n.trim()).filter(n => n);
+            const prob1 = document.getElementById('prob1').value;
+            const prob2 = document.getElementById('prob2').value;
+            const int1 = document.getElementById('int1').value;
+            const int2 = document.getElementById('int2').value;
+
+            let conditions = `groundMaterial ${comparisonType} ${number}`;
+            if (extraConditions.length > 0) {
+                extraConditions.forEach(condition => {
+                    conditions += ` ${logicalOperator} groundMaterial ${comparisonType} ${condition}`;
+                });
+            }
+
+            const code = `
+            m_creatureTypes.Add(new CreatureType("Cave ${creatureName}", SpawnLocationType.Cave, randomSpawn: false, constantSpawn: false) {
+                SpawnSuitabilityFunction = delegate (CreatureType creatureType, Point3 point) {int groundMaterial = Terrain.ExtractContents(m_subsystemTerrain.Terrain.GetCellValueFast(point.X, point.Y - 1, point.Z));
+                    if (${conditions}) 
+                    {
+                    return ${prob1}f; 
+                    }
+                    return ${prob2}f; },
+                SpawnFunction = delegate (CreatureType creatureType, Point3 point) {
+                    return SpawnCreatures(creatureType, "${creatureName}", point, m_random.Int(${int1}, ${int2})).Count;
+                }
+            });
+            `;
+
+            document.getElementById('outputCode').value = code;
+        }
+
+        function copyCode() {
+            const codeOutput = document.getElementById('outputCode');
+            codeOutput.select();
+            document.execCommand('copy');
+            alert('Código copiado');
+        }
+    </script>
+</body>
+</html>
